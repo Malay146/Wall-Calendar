@@ -49,7 +49,7 @@ export function CalendarSheet({ monthDate, monoFontClassName, handwrittenFontCla
           loading={eagerImage ? "eager" : "lazy"}
         />
       </div>
-      <div className="w-full flex items-center justify-between p-4">
+      <div className="w-full h-80 flex items-center justify-between p-4 overflow-hidden">
         <NotesSection
           notes={notes}
           onNotesChange={setNotes}
