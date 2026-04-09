@@ -11,6 +11,9 @@ type FlipCalendarBookProps = {
 };
 
 export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, baseDate }: FlipCalendarBookProps) {
+  const BASE_WIDTH = 560;
+  const BASE_HEIGHT = 700;
+
   const monthDates = useMemo(() => {
     return Array.from({ length: 12 }, (_, index) => {
       const day = index === 0 ? baseDate.getDate() : 1;
@@ -20,6 +23,7 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
 
   const [activePage, setActivePage] = useState(0);
   const [flipState, setFlipState] = useState<{ from: number; to: number } | null>(null);
+  const [scale, setScale] = useState(1);
   const flipLayerRef = useRef<HTMLDivElement | null>(null);
   const shadowLayerRef = useRef<HTMLDivElement | null>(null);
   const highlightLayerRef = useRef<HTMLDivElement | null>(null);
@@ -216,9 +220,26 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
     };
   }, [flipState]);
 
+  useEffect(() => {
+    const updateScale = () => {
+      const widthScale = (window.innerWidth - 24) / BASE_WIDTH;
+      const heightScale = (window.innerHeight - 24) / BASE_HEIGHT;
+      const nextScale = Math.min(1, widthScale, heightScale);
+      setScale(Math.max(0.3, nextScale));
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    return () => {
+      window.removeEventListener("resize", updateScale);
+    };
+  }, []);
+
   return (
-    <div className="w-140 overflow-visible shadow-2xl">
-      <div className="w-140 flex items-center justify-between mb-2 px-1">
+    <div className="overflow-visible" style={{ width: BASE_WIDTH * scale, height: BASE_HEIGHT * scale }}>
+      <div className="w-140 overflow-visible shadow-2xl" style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <div className="w-140 flex items-center justify-between mb-2 px-1">
         <button
           type="button"
           onClick={goToPrevious}
@@ -238,9 +259,9 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
         >
           Next
         </button>
-      </div>
+        </div>
 
-      <div className="w-140 h-160 relative perspective-[2200px] transform-3d overflow-visible isolate">
+        <div className="w-140 h-160 relative perspective-[2200px] transform-3d overflow-visible isolate">
         <div
           ref={baseShadowRef}
           className="absolute left-4 right-4 top-2 h-14 pointer-events-none"
@@ -341,6 +362,7 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
             />
           </div>
         )}
+        </div>
       </div>
     </div>
   );
