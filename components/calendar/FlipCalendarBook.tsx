@@ -10,16 +10,24 @@ type FlipCalendarBookProps = {
   baseDate: Date;
 };
 
+const MONTH_IMAGE_URLS = [
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730241/image-1_inavzc.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730234/image-2_v5nxvg.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730235/image-3_wp7vag.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730237/image-4_e1q49r.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730241/image-5_ybnom9.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730238/image-6_kqfhht.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730237/image-7_v1ezfu.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730242/image-8_zfu0pq.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730251/image-9_sayhdb.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730242/image-10_t4zqcv.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730246/image-11_sc6om5.jpg",
+  "https://res.cloudinary.com/ddbpvv06y/image/upload/q_auto/f_auto/v1775730250/image-12_zmitcv.jpg",
+];
+
 export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, baseDate }: FlipCalendarBookProps) {
   const BASE_WIDTH = 560;
   const BASE_HEIGHT = 700;
-
-  const monthDates = useMemo(() => {
-    return Array.from({ length: 12 }, (_, index) => {
-      const day = index === 0 ? baseDate.getDate() : 1;
-      return new Date(baseDate.getFullYear(), baseDate.getMonth() + index, day);
-    });
-  }, [baseDate]);
 
   const [activePage, setActivePage] = useState(0);
   const [flipState, setFlipState] = useState<{ from: number; to: number } | null>(null);
@@ -30,10 +38,15 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
   const baseShadowRef = useRef<HTMLDivElement | null>(null);
   const edgeLayerRef = useRef<HTMLDivElement | null>(null);
 
-  const activeMonth = monthDates[activePage] ?? monthDates[0];
+  const getMonthDate = (monthOffset: number) => {
+    const day = monthOffset === 0 ? baseDate.getDate() : 1;
+    return new Date(baseDate.getFullYear(), baseDate.getMonth() + monthOffset, day);
+  };
+
+  const activeMonth = getMonthDate(activePage);
 
   const goToPrevious = () => {
-    if (flipState || activePage <= 0) {
+    if (flipState) {
       return;
     }
 
@@ -41,7 +54,7 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
   };
 
   const goToNext = () => {
-    if (flipState || activePage >= monthDates.length - 1) {
+    if (flipState) {
       return;
     }
 
@@ -49,8 +62,8 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
   };
 
   const isFlipping = flipState !== null;
-  const fromMonth = flipState ? monthDates[flipState.from] : null;
-  const toMonth = flipState ? monthDates[flipState.to] : null;
+  const fromMonth = flipState ? getMonthDate(flipState.from) : null;
+  const toMonth = flipState ? getMonthDate(flipState.to) : null;
   const isNextFlip = flipState ? flipState.to > flipState.from : false;
 
   const getStorageKeyPrefix = (date: Date) => {
@@ -58,8 +71,7 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
   };
 
   const getMonthImageSrc = (date: Date) => {
-    const monthIndex = date.getMonth() + 1;
-    return `/image-${monthIndex}.jpg`;
+    return MONTH_IMAGE_URLS[date.getMonth()] ?? "/image.png";
   };
 
   const getMonthCardColor = (date: Date) => {
@@ -80,6 +92,23 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
 
     return monthPalette[date.getMonth()] ?? "#dbeafe";
   };
+
+  useEffect(() => {
+    const preloadedImages: HTMLImageElement[] = [];
+
+    MONTH_IMAGE_URLS.forEach((src) => {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = src;
+      preloadedImages.push(image);
+    });
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.src = "";
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (!flipState || !flipLayerRef.current || !shadowLayerRef.current || !highlightLayerRef.current || !baseShadowRef.current || !edgeLayerRef.current) {
@@ -238,13 +267,13 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
 
   return (
     <div className="overflow-visible" style={{ width: BASE_WIDTH * scale, height: BASE_HEIGHT * scale }}>
-      <div className="w-140 overflow-visible shadow-2xl" style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
-        <div className="w-140 flex items-center justify-between mb-2 px-1">
+      <div className="w-140 overflow-visible" style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <div className="w-140 flex items-center justify-between mb-2 px-1 bg-transparent">
         <button
           type="button"
           onClick={goToPrevious}
-          disabled={activePage === 0 || isFlipping}
-          className="text-md font-medium tracking-tight px-4 py-2 disabled:opacity-40 rounded-2xl bg-neutral-200 "
+          disabled={isFlipping}
+          className="text-md font-medium tracking-tight px-4 py-2 disabled:opacity-40 rounded-2xl bg-neutral-200 cursor-pointer"
         >
           Prev
         </button>
@@ -254,14 +283,14 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
         <button
           type="button"
           onClick={goToNext}
-          disabled={activePage === monthDates.length - 1 || isFlipping}
-          className="text-md font-medium tracking-tight px-4 py-2 disabled:opacity-40 rounded-2xl bg-neutral-200 "
+          disabled={isFlipping}
+          className="text-md font-medium tracking-tight px-4 py-2 disabled:opacity-40 rounded-2xl bg-neutral-200 cursor-pointer"
         >
           Next
         </button>
         </div>
 
-        <div className="w-140 h-160 relative perspective-[2200px] transform-3d overflow-visible isolate">
+        <div className="w-140 h-160 relative perspective-[2200px] transform-3d overflow-visible isolate shadow-2xl">
         <div
           ref={baseShadowRef}
           className="absolute left-4 right-4 top-2 h-14 pointer-events-none"
@@ -275,12 +304,14 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
         {flipState && fromMonth && toMonth ? (
           <div className="absolute inset-0 z-0">
             <CalendarSheet
+              key={`under-${getStorageKeyPrefix(isNextFlip ? toMonth : fromMonth)}`}
               monthDate={isNextFlip ? toMonth : fromMonth}
               monoFontClassName={monoFontClassName}
               handwrittenFontClassName={handwrittenFontClassName}
               storageKeyPrefix={getStorageKeyPrefix(isNextFlip ? toMonth : fromMonth)}
               topImageSrc={getMonthImageSrc(isNextFlip ? toMonth : fromMonth)}
               cardBgColor={getMonthCardColor(isNextFlip ? toMonth : fromMonth)}
+              eagerImage
             />
           </div>
         ) : null}
@@ -305,12 +336,14 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
               style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d", transform: "translateZ(0px)" }}
             >
               <CalendarSheet
+                key={`flip-front-${getStorageKeyPrefix(isNextFlip ? fromMonth : toMonth)}`}
                 monthDate={isNextFlip ? fromMonth : toMonth}
                 monoFontClassName={monoFontClassName}
                 handwrittenFontClassName={handwrittenFontClassName}
                 storageKeyPrefix={getStorageKeyPrefix(isNextFlip ? fromMonth : toMonth)}
                 topImageSrc={getMonthImageSrc(isNextFlip ? fromMonth : toMonth)}
                 cardBgColor={getMonthCardColor(isNextFlip ? fromMonth : toMonth)}
+                eagerImage
               />
             </div>
 
@@ -353,12 +386,14 @@ export function FlipCalendarBook({ monoFontClassName, handwrittenFontClassName, 
         ) : (
           <div className="absolute inset-0 z-0">
             <CalendarSheet
+              key={`active-${getStorageKeyPrefix(activeMonth)}`}
               monthDate={activeMonth}
               monoFontClassName={monoFontClassName}
               handwrittenFontClassName={handwrittenFontClassName}
               storageKeyPrefix={getStorageKeyPrefix(activeMonth)}
               topImageSrc={getMonthImageSrc(activeMonth)}
               cardBgColor={getMonthCardColor(activeMonth)}
+              eagerImage
             />
           </div>
         )}

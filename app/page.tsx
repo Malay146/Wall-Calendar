@@ -26,7 +26,7 @@ export default function page() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center">
+    <div className="w-full min-h-screen flex items-center justify-center relative overflow-hidden">
       <FlipCalendarBook
         monoFontClassName={calendarMonoFont.className}
         handwrittenFontClassName={handwrittenFont.className}

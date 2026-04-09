@@ -13,9 +13,10 @@ type CalendarSheetProps = {
   storageKeyPrefix: string;
   topImageSrc: string;
   cardBgColor: string;
+  eagerImage?: boolean;
 };
 
-export function CalendarSheet({ monthDate, monoFontClassName, handwrittenFontClassName, storageKeyPrefix, topImageSrc, cardBgColor }: CalendarSheetProps) {
+export function CalendarSheet({ monthDate, monoFontClassName, handwrittenFontClassName, storageKeyPrefix, topImageSrc, cardBgColor, eagerImage = false }: CalendarSheetProps) {
   const {
     now,
     notes,
@@ -39,7 +40,14 @@ export function CalendarSheet({ monthDate, monoFontClassName, handwrittenFontCla
         <div className="absolute -top-3 left-0 w-full flex items-start justify-center pointer-events-none z-10">
           <SpiralBinding />
         </div>
-        <Image src={topImageSrc} alt="Calendar" className="opacity-80 select-none pointer-events-none" fill />
+        <Image
+          src={topImageSrc}
+          alt="Calendar"
+          className="opacity-80 select-none pointer-events-none"
+          fill
+          priority={eagerImage}
+          loading={eagerImage ? "eager" : "lazy"}
+        />
       </div>
       <div className="w-full flex items-center justify-between p-4">
         <NotesSection
